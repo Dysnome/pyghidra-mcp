@@ -1,6 +1,7 @@
 # Server
 # ---------------------------------------------------------------------------------
 import logging
+import os
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -52,7 +53,11 @@ async def server_lifespan(server: Server) -> AsyncIterator[PyGhidraContext]:
         pass
 
 
-mcp = FastMCP("pyghidra-mcp", lifespan=server_lifespan)  # type: ignore
+# Get host and port from environment variables with defaults
+FASTMCP_HOST = os.getenv("FASTMCP_HOST", "0.0.0.0")
+FASTMCP_PORT = int(os.getenv("FASTMCP_PORT", "8000"))
+
+mcp = FastMCP("pyghidra-mcp", host=FASTMCP_HOST, port=FASTMCP_PORT, lifespan=server_lifespan)  # type: ignore
 
 
 # MCP Tools
@@ -448,7 +453,7 @@ def init_pyghidra_context(
     "-t",
     "--transport",
     type=click.Choice(["stdio", "streamable-http", "sse"]),
-    default="stdio",
+    default="streamable-http",
     envvar="MCP_TRANSPORT",
     help="Transport protocol to use: stdio, streamable-http, or sse (legacy)",
 )
