@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  pyghidra-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pyghidra-mcp
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount local binaries directory for analysis
+      - ./binaries:/binaries:ro
+      # Optional: Mount a workspace directory for persistent data
+      - ./workspace:/workspace
+    environment:
+      # Expose the server to the outside world
+      - FASTMCP_HOST=0.0.0.0
+      # Ghidra installation directory (set in Dockerfile)
+      - GHIDRA_INSTALL_DIR=/ghidra
+      # Optional: Set the default transport mode
+      # - TRANSPORT_MODE=streamable-http
+    # Default command can be overridden
+    # command: ["-t", "streamable-http"]
+    # Alternative commands for different transport modes:
+    # stdio mode: ["-t", "stdio"]
+    # sse mode: ["-t", "sse"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/mcp"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add a reverse proxy for easier access
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: pyghidra-mcp-proxy
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - pyghidra-mcp
+  #   restart: unless-stopped
+
+  # Optional: Add MCPO for OpenAPI compatibility
+  # mcpo:
+  #   image: ghcr.io/open-webui/mcpo:latest
+  #   container_name: pyghidra-mcp-mcpo
+  #   ports:
+  #     - "8001:8000"
+  #   command: ["--port", "8000", "--", "pyghidra-mcp", "/binaries/*"]
+  #   volumes:
+  #     - ./binaries:/binaries:ro
+  #   depends_on:
+  #     - pyghidra-mcp
+  #   restart: unless-stopped
