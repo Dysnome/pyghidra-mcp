@@ -5,31 +5,24 @@ services:
       dockerfile: Dockerfile
     container_name: pyghidra-mcp
     ports:
-      - "8000:8000"
+      - "9001:8000"
     volumes:
-      # Mount local binaries directory for analysis
-      - ./binaries:/binaries:ro
-      # Optional: Mount a workspace directory for persistent data
-      - ./workspace:/workspace
+      - ./evidences:/evidences:rw
+      - ./ghidra_data:/ghidra_data:rw
     environment:
-      # Expose the server to the outside world
-      - FASTMCP_HOST=0.0.0.0
-      # Ghidra installation directory (set in Dockerfile)
       - GHIDRA_INSTALL_DIR=/ghidra
-      # Optional: Set the default transport mode
-      # - TRANSPORT_MODE=streamable-http
-    # Default command can be overridden
-    # command: ["-t", "streamable-http"]
-    # Alternative commands for different transport modes:
-    # stdio mode: ["-t", "stdio"]
-    # sse mode: ["-t", "sse"]
-    restart: unless-stopped
+      - GHIDRA_PROJECT_PATH=/ghidra_data
+      - FASTMCP_HOST=0.0.0.0     # MCP specific
+    command: ["-t", "streamable-http"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/mcp"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    restart: unless-stopped
+    networks:
+      - mcp-network
 
   # Optional: Add a reverse proxy for easier access
   # nginx:
@@ -55,3 +48,8 @@ services:
   #   depends_on:
   #     - pyghidra-mcp
   #   restart: unless-stopped
+
+
+networks:
+  mcp-network:
+    driver: bridge
