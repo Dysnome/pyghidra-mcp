@@ -13,6 +13,8 @@ from mcp.server import Server
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.shared.exceptions import McpError
 from mcp.types import INTERNAL_ERROR, INVALID_PARAMS, ErrorData
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from pyghidra_mcp.__init__ import __version__
 from pyghidra_mcp.context import PyGhidraContext
@@ -59,6 +61,22 @@ FASTMCP_PORT = int(os.getenv("FASTMCP_PORT", "8000"))
 
 mcp = FastMCP("pyghidra-mcp", host=FASTMCP_HOST, port=FASTMCP_PORT, lifespan=server_lifespan)  # type: ignore
 
+# Health Check
+# ---------------------------------------------------------------------------------
+@mcp.custom_route("/health", methods=["GET"])
+async def health_check(request: Request):
+    """Health check endpoint."""
+    try:
+        if not hasattr(mcp, "_pyghidra_context"):
+            return JSONResponse({"status": "unhealthy", "reason": "Context not initialized"}, status_code=503)
+        
+        pyghidra_context: PyGhidraContext = mcp._pyghidra_context  # type: ignore
+        # Perform a lightweight check
+        pyghidra_context.list_binaries()
+        
+        return JSONResponse({"status": "ok"})
+    except Exception as e:
+        return JSONResponse({"status": "unhealthy", "reason": str(e)}, status_code=503)
 
 # MCP Tools
 # ---------------------------------------------------------------------------------
