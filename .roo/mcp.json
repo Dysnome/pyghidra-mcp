@@ -1,0 +1,1 @@
+{"mcpServers":{"pyghidra-mcp":{"url":"http://localhost:9001/mcp","type":"streamable-http","alwaysAllow":["list_project_binaries","import_binary","list_project_program_info","list_exports","decompile_function","search_functions_by_name","search_symbols_by_name","search_code","list_imports","list_cross_references","search_strings","read_bytes"],"timeout":300}}}
